@@ -1,0 +1,27 @@
+name: False positive
+description: A legitimate program triggered an incident
+labels: [false-positive]
+body:
+  - type: input
+    id: program
+    attributes:
+      label: Program and version
+    validations:
+      required: true
+  - type: input
+    id: signer
+    attributes:
+      label: Signer (from the incident's process section)
+  - type: textarea
+    id: details
+    attributes:
+      label: Incident details
+      description: Score reasons, decoys touched and image path. You can attach the exported JSON after removing anything sensitive.
+    validations:
+      required: true
+  - type: checkboxes
+    id: allow
+    attributes:
+      label: Allowlist
+      options:
+        - label: This program should be in the built-in allowlist (explain why above)

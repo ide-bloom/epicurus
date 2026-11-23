@@ -1,0 +1,46 @@
+[package]
+name = "epicurus-service"
+description = "Windows service host, detection engine, alerting and IPC server for Epicurus."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+epicurus-core.workspace = true
+epicurus-sensor.workspace = true
+base64.workspace = true
+hex.workspace = true
+hmac.workspace = true
+reqwest.workspace = true
+rustls.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+time.workspace = true
+tokio.workspace = true
+rand.workspace = true
+tracing.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows-service.workspace = true
+windows = { workspace = true, features = [
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_Security_Authorization",
+    "Win32_System_EventLog",
+    "Win32_System_Environment",
+    "Win32_System_Pipes",
+    "Win32_System_Registry",
+    "Win32_System_RemoteDesktop",
+    "Win32_System_Threading",
+] }
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

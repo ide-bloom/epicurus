@@ -1,0 +1,15 @@
+name: Feature or decoy request
+description: Suggest a feature, sensor improvement or new decoy location
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or threat
+      description: Which stealer behavior or workflow is not covered? Link public research if any.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal

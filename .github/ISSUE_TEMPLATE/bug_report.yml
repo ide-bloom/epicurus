@@ -1,0 +1,39 @@
+name: Bug report
+description: Something does not work as documented
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: "Security vulnerabilities must be reported privately; see SECURITY.md."
+  - type: input
+    id: version
+    attributes:
+      label: Epicurus version
+      placeholder: "epicurus --version"
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows edition and build
+      placeholder: "Windows 11 Pro 25H2 (26200.xxxx) x64"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: Steps to reproduce, expected and actual behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `epicurus doctor`
+      render: text
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log lines from %ProgramData%\Epicurus\logs
+      description: Remove anything sensitive.
+      render: text

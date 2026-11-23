@@ -1,0 +1,1020 @@
+# Epicurus default decoy catalog.
+#
+# Embedded into epicurus.exe at compile time. Extend or override it with TOML
+# files in %ProgramData%\Epicurus\catalog.d\ (same schema; an entry with the
+# same id replaces this one, `disabled = true` removes it).
+#
+# Rules this file must follow (enforced by tests):
+# * Every secret is a {{placeholder}} filled by a generator at plant time.
+#   Never write a token-shaped literal here.
+# * Every path starts with %USERPROFILE%\, %APPDATA%\ or %LOCALAPPDATA%\.
+#
+# See docs/decoy-catalog.md for the full schema.
+
+schema_version = 1
+
+[profiles]
+default = ["*"]
+ai = ["ai_agent", "mcp"]
+developer = ["ai_agent", "mcp", "cloud"]
+minimal = ["ai_agent", "cloud"]
+
+[sets]
+users = ["jdoe", "mkim", "aschmidt", "rpatel", "lnguyen", "dcosta", "ehansen", "tmorales", "kwalsh", "sobrien"]
+domains = ["gmail.com", "outlook.com", "proton.me", "fastmail.com"]
+work_domains = ["northwind-labs.io", "contoso-dev.com", "fabrikam.tech", "tailspin.io", "adatum.dev"]
+internal_domains = ["corp.internal", "prod.internal", "svc.cluster.local", "int.example.net"]
+hosts = ["devbox", "ws", "laptop", "build", "dev-vm"]
+companies = ["Northwind Labs", "Contoso Dev", "Fabrikam", "Tailspin", "Adatum"]
+projects = ["billing-api-legacy", "payments-service-old", "invoice-worker-v1", "ledger-sync-archive", "checkout-api-2023", "auth-gateway-legacy"]
+ssh_dirs = ["old", "backup", "archive", "legacy", "prev"]
+chromium_profiles = ["Profile 5", "Profile 6", "Profile 7", "Profile 8", "Profile 9"]
+chromium_profiles_alt = ["Profile 11", "Profile 12", "Profile 13", "Profile 14", "Profile 15"]
+profile_names = ["Work", "Client", "Staging", "Personal 2", "Testing"]
+regions = ["us-east-1", "us-west-2", "eu-west-1", "eu-central-1", "ap-southeast-2"]
+aws_profiles = ["prod-admin", "billing", "deploy", "terraform", "legacy"]
+db_users = ["app_rw", "billing_svc", "admin", "postgres", "reporting"]
+db_hosts = ["pg-primary", "db-prod-01", "billing-db", "pg-main", "rds-legacy"]
+db_names = ["billing", "payments", "ledger", "app_production", "core"]
+gcp_projects = ["billing-prod-4471", "platform-core-2291", "data-pipeline-0937", "api-gateway-5520"]
+k8s_clusters = ["prod-eu", "prod-us", "staging", "platform", "aks-main"]
+registries = ["northwindcr", "contosoacr", "fabrikamreg", "tailspincr"]
+npm_scopes = ["northwind", "contoso", "fabrikam", "tailspin", "adatum"]
+
+[snippets]
+mcp_servers_json = '''
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "{{gh_token}}"
+      }
+    },
+    "slack": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-slack"],
+      "env": {
+        "SLACK_BOT_TOKEN": "{{slack_token}}",
+        "SLACK_TEAM_ID": "T{{slack_team|upper}}"
+      }
+    },
+    "notion": {
+      "command": "npx",
+      "args": ["-y", "@notionhq/notion-mcp-server"],
+      "env": {
+        "NOTION_TOKEN": "{{notion_token}}"
+      }
+    },
+    "postgres": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://{{pg_user}}:{{pg_password}}@{{pg_host}}.{{internal_domain}}:5432/{{pg_db}}"
+      ]
+    },
+    "stripe": {
+      "command": "npx",
+      "args": ["-y", "@stripe/mcp", "--tools=all", "--api-key={{stripe_key}}"]
+    }'''
+
+mcp_servers_toml = '''
+[mcp_servers.github]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-github"]
+env = { GITHUB_PERSONAL_ACCESS_TOKEN = "{{gh_token}}" }
+
+[mcp_servers.slack]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-slack"]
+env = { SLACK_BOT_TOKEN = "{{slack_token}}", SLACK_TEAM_ID = "T{{slack_team|upper}}" }
+
+[mcp_servers.notion]
+command = "npx"
+args = ["-y", "@notionhq/notion-mcp-server"]
+env = { NOTION_TOKEN = "{{notion_token}}" }
+
+[mcp_servers.postgres]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-postgres", "postgresql://{{pg_user}}:{{pg_password}}@{{pg_host}}.{{internal_domain}}:5432/{{pg_db}}"]
+
+[mcp_servers.stripe]
+command = "npx"
+args = ["-y", "@stripe/mcp", "--tools=all", "--api-key={{stripe_key}}"]
+'''
+
+# ---------------------------------------------------------------------------
+# Groups: fields shared by several decoys.
+# ---------------------------------------------------------------------------
+
+[groups.mcp]
+fields = { gh_token = "github_pat", slack_token = "slack_bot_token", slack_team = "alnum:10", notion_token = "notion_token", pg_user = "pick:db_users", pg_password = "alnum:24", pg_host = "pick:db_hosts", pg_db = "pick:db_names", internal_domain = "pick:internal_domains", stripe_key = "stripe_secret_key" }
+
+[groups.project]
+fields = { project = "pick:projects", gh_token = "github_pat", slack_token = "slack_bot_token", slack_team = "alnum:10", notion_token = "notion_token", pg_user = "pick:db_users", pg_password = "alnum:24", pg_host = "pick:db_hosts", pg_db = "pick:db_names", internal_domain = "pick:internal_domains", stripe_key = "stripe_secret_key", gcp_project = "pick:gcp_projects" }
+
+[groups.openclaw]
+fields = { anthropic_key = "anthropic_api_key", openai_key = "openai_api_key" }
+
+[groups.azure]
+fields = { tenant = "uuid", subscription = "uuid", user = "username", work_domain = "pick:work_domains", company = "pick:companies" }
+
+[groups.ssh]
+fields = { sshdir = "pick:ssh_dirs", key = "ssh_ed25519" }
+
+[groups.chrome]
+fields = { profile = "pick:chromium_profiles", profile_alt = "pick:chromium_profiles_alt", user = "username", work_domain = "pick:work_domains" }
+require_any = ['%LOCALAPPDATA%\Google\Chrome\User Data']
+
+[groups.edge]
+fields = { profile = "pick:chromium_profiles", profile_alt = "pick:chromium_profiles_alt", user = "username", work_domain = "pick:work_domains" }
+require_any = ['%LOCALAPPDATA%\Microsoft\Edge\User Data']
+
+[groups.brave]
+fields = { profile = "pick:chromium_profiles", profile_alt = "pick:chromium_profiles_alt", user = "username", work_domain = "pick:work_domains" }
+require_any = ['%LOCALAPPDATA%\BraveSoftware\Brave-Browser\User Data']
+
+[groups.exodus]
+skip_if_any = ['%APPDATA%\Exodus']
+
+[groups.telegram]
+
+# ---------------------------------------------------------------------------
+# AI coding agents and assistants
+# ---------------------------------------------------------------------------
+
+[[decoy]]
+id = "claude-code-credentials"
+category = "ai_agent"
+description = "Claude Code OAuth credentials (~/.claude/.credentials.json)"
+targets = [
+  '%USERPROFILE%\.claude\.credentials.json',
+  '%USERPROFILE%\.claude\.credentials.json.bak',
+  '%USERPROFILE%\.claude-old\.credentials.json',
+]
+installed_if = ['%USERPROFILE%\.claude\.credentials.json']
+fields = { access = "anthropic_oauth_access", refresh = "anthropic_oauth_refresh", expires = "epoch_ms_future" }
+plausibility = { age_days = [3, 40], hidden = false }
+content = { kind = "text", template = '''{"claudeAiOauth":{"accessToken":"{{access}}","refreshToken":"{{refresh}}","expiresAt":{{expires}},"scopes":["user:inference","user:profile","user:sessions:claude_code"],"subscriptionType":"max","rateLimitTier":"default_claude_max_20x"}}''' }
+
+[[decoy]]
+id = "claude-code-config"
+category = "ai_agent"
+group = "mcp"
+description = "Claude Code global config with MCP servers and account (~/.claude.json)"
+targets = [
+  '%USERPROFILE%\.claude.json',
+  '%USERPROFILE%\.claude\backups\.claude.json.backup',
+  '%USERPROFILE%\.claude-old\.claude.json',
+]
+installed_if = ['%USERPROFILE%\.claude.json']
+fields = { user_id = "hex:64", account = "uuid", org = "uuid", email = "email", startups = "int:40:900" }
+plausibility = { age_days = [2, 30] }
+content = { kind = "text", template = '''{
+  "numStartups": {{startups}},
+  "installMethod": "native",
+  "autoUpdates": true,
+  "theme": "dark",
+  "userID": "{{user_id}}",
+  "hasCompletedOnboarding": true,
+  "oauthAccount": {
+    "accountUuid": "{{account}}",
+    "emailAddress": "{{email}}",
+    "organizationUuid": "{{org}}",
+    "organizationRole": "admin"
+  },
+  "mcpServers": { {{@mcp_servers_json}}
+  },
+  "projects": {}
+}
+''' }
+
+[[decoy]]
+id = "codex-auth"
+category = "ai_agent"
+description = "OpenAI Codex CLI auth (~/.codex/auth.json)"
+targets = [
+  '%USERPROFILE%\.codex\auth.json',
+  '%USERPROFILE%\.codex\auth.json.bak',
+  '%USERPROFILE%\.codex-old\auth.json',
+]
+installed_if = ['%USERPROFILE%\.codex\auth.json']
+fields = { api_key = "openai_api_key", id_token = "jwt", access_token = "jwt", refresh = "openai_refresh_token", account = "uuid", refreshed = "date_past:1:20" }
+plausibility = { age_days = [1, 20] }
+content = { kind = "text", template = '''{
+  "OPENAI_API_KEY": "{{api_key}}",
+  "tokens": {
+    "id_token": "{{id_token}}",
+    "access_token": "{{access_token}}",
+    "refresh_token": "{{refresh}}",
+    "account_id": "{{account}}"
+  },
+  "last_refresh": "{{refreshed}}"
+}
+''' }
+
+[[decoy]]
+id = "cursor-state"
+category = "ai_agent"
+description = "Cursor global state database with session tokens (state.vscdb)"
+targets = [
+  '%APPDATA%\Cursor\User\globalStorage\state.vscdb',
+  '%APPDATA%\Cursor\User\globalStorage\state.vscdb.backup',
+  '%APPDATA%\Cursor.old\User\globalStorage\state.vscdb',
+]
+installed_if = ['%APPDATA%\Cursor\User\globalStorage\state.vscdb']
+fields = { access = "jwt", refresh = "jwt", email = "email" }
+plausibility = { age_days = [1, 15] }
+content = { kind = "sqlite", shape = "vscode_state", rows = [
+  { key = "cursorAuth/accessToken", value = "{{access}}" },
+  { key = "cursorAuth/refreshToken", value = "{{refresh}}" },
+  { key = "cursorAuth/cachedEmail", value = "{{email}}" },
+  { key = "cursorAuth/cachedSignUpType", value = "Auth_0" },
+  { key = "cursorAuth/stripeMembershipType", value = "pro" },
+] }
+
+[[decoy]]
+id = "windsurf-state"
+category = "ai_agent"
+description = "Windsurf global state database with the Codeium API key (state.vscdb)"
+targets = [
+  '%APPDATA%\Windsurf\User\globalStorage\state.vscdb',
+  '%APPDATA%\Windsurf\User\globalStorage\state.vscdb.backup',
+  '%APPDATA%\Windsurf - Next\User\globalStorage\state.vscdb',
+]
+installed_if = ['%APPDATA%\Windsurf\User\globalStorage\state.vscdb']
+fields = { api_key = "uuid", install_id = "uuid", user = "username", email = "email" }
+plausibility = { age_days = [1, 15] }
+content = { kind = "sqlite", shape = "vscode_state", rows = [
+  { key = "windsurfAuthStatus", value = '{"apiKey":"{{api_key}}","name":"{{user}}","email":"{{email}}"}' },
+  { key = "codeium.windsurf", value = '{"codeium.installationId":"{{install_id}}"}' },
+] }
+
+[[decoy]]
+id = "gemini-oauth"
+category = "ai_agent"
+description = "Gemini CLI OAuth credentials (~/.gemini/oauth_creds.json)"
+targets = [
+  '%USERPROFILE%\.gemini\oauth_creds.json',
+  '%USERPROFILE%\.gemini\oauth_creds.json.bak',
+  '%USERPROFILE%\.gemini-old\oauth_creds.json',
+]
+installed_if = ['%USERPROFILE%\.gemini\oauth_creds.json']
+fields = { access = "google_oauth_access", refresh = "google_oauth_refresh", id_token = "jwt", expiry = "epoch_ms_future" }
+plausibility = { age_days = [1, 30] }
+content = { kind = "text", template = '''{
+  "access_token": "{{access}}",
+  "scope": "https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile openid",
+  "token_type": "Bearer",
+  "id_token": "{{id_token}}",
+  "expiry_date": {{expiry}},
+  "refresh_token": "{{refresh}}"
+}
+''' }
+
+[[decoy]]
+id = "copilot-apps"
+category = "ai_agent"
+description = "GitHub Copilot OAuth token store (github-copilot/apps.json)"
+targets = [
+  '%LOCALAPPDATA%\github-copilot\apps.json',
+  '%LOCALAPPDATA%\github-copilot\hosts.json',
+  '%LOCALAPPDATA%\github-copilot\apps.json.bak',
+]
+installed_if = ['%LOCALAPPDATA%\github-copilot\apps.json', '%LOCALAPPDATA%\github-copilot\hosts.json']
+fields = { token = "github_oauth", user = "username" }
+plausibility = { age_days = [10, 200] }
+content = { kind = "text", template = '''{"github.com:Iv1.b507a08c87ecfe98":{"user":"{{user}}","oauth_token":"{{token}}","githubAppId":"Iv1.b507a08c87ecfe98"}}''' }
+
+[[decoy]]
+id = "openclaw-config"
+category = "ai_agent"
+group = "openclaw"
+description = "OpenClaw-style agent gateway config with channel tokens (~/.openclaw/openclaw.json)"
+targets = [
+  '%USERPROFILE%\.openclaw\openclaw.json',
+  '%USERPROFILE%\.clawdbot\clawdbot.json',
+  '%USERPROFILE%\.openclaw\openclaw.json.bak',
+]
+installed_if = ['%USERPROFILE%\.openclaw\openclaw.json']
+fields = { gateway_token = "hex:48", telegram = "telegram_bot_token", discord = "discord_token" }
+plausibility = { age_days = [5, 90] }
+content = { kind = "text", template = '''{
+  "gateway": {
+    "mode": "local",
+    "port": 18789,
+    "bind": "loopback",
+    "auth": { "mode": "token", "token": "{{gateway_token}}" }
+  },
+  "channels": {
+    "telegram": { "enabled": true, "botToken": "{{telegram}}", "dmPolicy": "pairing" },
+    "discord": { "enabled": true, "token": "{{discord}}" }
+  },
+  "agents": {
+    "defaults": { "workspace": "~/.openclaw/workspace", "model": { "primary": "anthropic/claude-sonnet" } }
+  }
+}
+''' }
+
+[[decoy]]
+id = "openclaw-auth-profiles"
+category = "ai_agent"
+group = "openclaw"
+description = "OpenClaw-style agent model auth profiles with provider API keys"
+targets = [
+  '%USERPROFILE%\.openclaw\agents\main\agent\auth-profiles.json',
+  '%USERPROFILE%\.clawdbot\agents\main\agent\auth-profiles.json',
+]
+installed_if = ['%USERPROFILE%\.openclaw\agents']
+plausibility = { age_days = [5, 90] }
+content = { kind = "text", template = '''{
+  "version": 1,
+  "profiles": {
+    "anthropic:default": { "type": "api_key", "provider": "anthropic", "key": "{{anthropic_key}}" },
+    "openai:default": { "type": "api_key", "provider": "openai", "key": "{{openai_key}}" }
+  }
+}
+''' }
+
+# ---------------------------------------------------------------------------
+# MCP server configurations
+# ---------------------------------------------------------------------------
+
+[[decoy]]
+id = "claude-desktop-mcp"
+category = "mcp"
+group = "mcp"
+description = "Claude Desktop MCP server config (claude_desktop_config.json)"
+targets = [
+  '%APPDATA%\Claude\claude_desktop_config.json',
+  '%APPDATA%\Claude\claude_desktop_config.json.bak',
+  '%APPDATA%\Claude-old\claude_desktop_config.json',
+]
+installed_if = ['%APPDATA%\Claude\claude_desktop_config.json']
+plausibility = { age_days = [10, 180] }
+content = { kind = "text", template = '''{
+  "mcpServers": { {{@mcp_servers_json}}
+  }
+}
+''' }
+
+[[decoy]]
+id = "project-mcp-json"
+category = "mcp"
+group = "project"
+description = "Project-scoped .mcp.json in a decoy repository"
+targets = [
+  '%USERPROFILE%\source\repos\{{project}}\.mcp.json',
+  '%USERPROFILE%\Projects\{{project}}\.mcp.json',
+]
+fresh_dirs = ['%USERPROFILE%\source\repos\{{project}}', '%USERPROFILE%\Projects\{{project}}']
+plausibility = { age_days = [120, 600] }
+content = { kind = "text", template = '''{
+  "mcpServers": { {{@mcp_servers_json}}
+  }
+}
+''' }
+
+[[decoy]]
+id = "cursor-mcp"
+category = "mcp"
+group = "mcp"
+description = "Cursor global MCP config (~/.cursor/mcp.json)"
+targets = [
+  '%USERPROFILE%\.cursor\mcp.json',
+  '%USERPROFILE%\.cursor\mcp.json.bak',
+  '%USERPROFILE%\.cursor-old\mcp.json',
+]
+installed_if = ['%USERPROFILE%\.cursor\mcp.json']
+plausibility = { age_days = [10, 180] }
+content = { kind = "text", template = '''{
+  "mcpServers": { {{@mcp_servers_json}}
+  }
+}
+''' }
+
+[[decoy]]
+id = "windsurf-mcp"
+category = "mcp"
+group = "mcp"
+description = "Windsurf MCP config (~/.codeium/windsurf/mcp_config.json)"
+targets = [
+  '%USERPROFILE%\.codeium\windsurf\mcp_config.json',
+  '%USERPROFILE%\.codeium\windsurf\mcp_config.json.bak',
+  '%USERPROFILE%\.codeium\windsurf-next\mcp_config.json',
+]
+installed_if = ['%USERPROFILE%\.codeium\windsurf\mcp_config.json']
+plausibility = { age_days = [10, 180] }
+content = { kind = "text", template = '''{
+  "mcpServers": { {{@mcp_servers_json}}
+  }
+}
+''' }
+
+[[decoy]]
+id = "codex-config"
+category = "mcp"
+group = "mcp"
+description = "OpenAI Codex CLI config with MCP servers (~/.codex/config.toml)"
+targets = [
+  '%USERPROFILE%\.codex\config.toml',
+  '%USERPROFILE%\.codex\config.toml.bak',
+  '%USERPROFILE%\.codex-old\config.toml',
+]
+installed_if = ['%USERPROFILE%\.codex\config.toml']
+plausibility = { age_days = [5, 120] }
+content = { kind = "text", template = '''model = "gpt-5-codex"
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+{{@mcp_servers_toml}}''' }
+
+[[decoy]]
+id = "gemini-settings"
+category = "mcp"
+group = "mcp"
+description = "Gemini CLI settings with MCP servers (~/.gemini/settings.json)"
+targets = [
+  '%USERPROFILE%\.gemini\settings.json',
+  '%USERPROFILE%\.gemini\settings.json.bak',
+  '%USERPROFILE%\.gemini-old\settings.json',
+]
+installed_if = ['%USERPROFILE%\.gemini\settings.json']
+plausibility = { age_days = [5, 120] }
+content = { kind = "text", template = '''{
+  "selectedAuthType": "oauth-personal",
+  "theme": "Default",
+  "mcpServers": { {{@mcp_servers_json}}
+  }
+}
+''' }
+
+# ---------------------------------------------------------------------------
+# Cloud and developer credentials
+# ---------------------------------------------------------------------------
+
+[[decoy]]
+id = "aws-credentials"
+category = "cloud"
+description = "AWS shared credentials file (~/.aws/credentials)"
+targets = [
+  '%USERPROFILE%\.aws\credentials',
+  '%USERPROFILE%\.aws\credentials.bak',
+  '%USERPROFILE%\.aws.old\credentials',
+]
+installed_if = ['%USERPROFILE%\.aws\credentials']
+fields = { id1 = "aws_access_key_id", secret1 = "aws_secret_access_key", id2 = "aws_access_key_id", secret2 = "aws_secret_access_key", region = "pick:regions", profile2 = "pick:aws_profiles" }
+plausibility = { age_days = [60, 500] }
+content = { kind = "text", template = '''[default]
+aws_access_key_id = {{id1}}
+aws_secret_access_key = {{secret1}}
+region = {{region}}
+
+[{{profile2}}]
+aws_access_key_id = {{id2}}
+aws_secret_access_key = {{secret2}}
+region = {{region}}
+''' }
+
+[[decoy]]
+id = "azure-profile"
+category = "cloud"
+group = "azure"
+description = "Azure CLI profile (~/.azure/azureProfile.json)"
+targets = [
+  '%USERPROFILE%\.azure\azureProfile.json',
+  '%USERPROFILE%\.azure\azureProfile.json.bak',
+  '%USERPROFILE%\.azure-old\azureProfile.json',
+]
+installed_if = ['%USERPROFILE%\.azure\azureProfile.json']
+fields = { install_id = "uuid" }
+plausibility = { age_days = [30, 400] }
+content = { kind = "text", template = '''{"installationId": "{{install_id}}", "subscriptions": [{"id": "{{subscription}}", "name": "{{company}} Production", "state": "Enabled", "user": {"name": "{{user}}@{{work_domain}}", "type": "user"}, "isDefault": true, "tenantId": "{{tenant}}", "environmentName": "AzureCloud", "homeTenantId": "{{tenant}}", "tenantDefaultDomain": "{{work_domain}}", "tenantDisplayName": "{{company}}", "managedByTenants": []}]}''' }
+
+[[decoy]]
+id = "azure-msal-cache"
+category = "cloud"
+group = "azure"
+description = "Azure CLI MSAL token cache (~/.azure/msal_token_cache.json)"
+targets = [
+  '%USERPROFILE%\.azure\msal_token_cache.json',
+  '%USERPROFILE%\.azure\msal_token_cache.json.bak',
+  '%USERPROFILE%\.azure-old\msal_token_cache.json',
+]
+installed_if = ['%USERPROFILE%\.azure\msal_token_cache.json', '%USERPROFILE%\.azure\msal_token_cache.bin']
+fields = { home_oid = "uuid", access = "jwt", refresh = "azure_refresh_token", cached_at = "epoch_past:1:10" }
+plausibility = { age_days = [1, 20] }
+content = { kind = "text", template = '''{"AccessToken": {"{{home_oid}}.{{tenant}}-login.microsoftonline.com-accesstoken-04b07795-8ddb-461a-bbee-02f9e1bf7b46-{{tenant}}-https://management.core.windows.net//user_impersonation https://management.core.windows.net//.default": {"credential_type": "AccessToken", "secret": "{{access}}", "home_account_id": "{{home_oid}}.{{tenant}}", "environment": "login.microsoftonline.com", "client_id": "04b07795-8ddb-461a-bbee-02f9e1bf7b46", "target": "https://management.core.windows.net//user_impersonation https://management.core.windows.net//.default", "realm": "{{tenant}}", "token_type": "Bearer", "cached_at": "{{cached_at}}"}}, "RefreshToken": {"{{home_oid}}.{{tenant}}-login.microsoftonline.com-refreshtoken-04b07795-8ddb-461a-bbee-02f9e1bf7b46--https://management.core.windows.net//user_impersonation https://management.core.windows.net//.default": {"credential_type": "RefreshToken", "secret": "{{refresh}}", "home_account_id": "{{home_oid}}.{{tenant}}", "environment": "login.microsoftonline.com", "client_id": "04b07795-8ddb-461a-bbee-02f9e1bf7b46", "target": "https://management.core.windows.net//user_impersonation https://management.core.windows.net//.default", "last_modification_time": "{{cached_at}}"}}, "Account": {"{{home_oid}}.{{tenant}}-login.microsoftonline.com-{{tenant}}": {"home_account_id": "{{home_oid}}.{{tenant}}", "environment": "login.microsoftonline.com", "realm": "{{tenant}}", "local_account_id": "{{home_oid}}", "username": "{{user}}@{{work_domain}}", "authority_type": "MSSTS"}}}''' }
+
+[[decoy]]
+id = "gcloud-adc"
+category = "cloud"
+description = "gcloud application default credentials"
+targets = [
+  '%APPDATA%\gcloud\application_default_credentials.json',
+  '%APPDATA%\gcloud\legacy_credentials\{{email}}\adc.json',
+]
+installed_if = ['%APPDATA%\gcloud\application_default_credentials.json']
+fields = { client_num = "digits:12", client_id = "alnum:32", secret = "google_client_secret", refresh = "google_oauth_refresh", quota = "pick:gcp_projects", email = "email" }
+plausibility = { age_days = [30, 300] }
+content = { kind = "text", template = '''{
+  "account": "",
+  "client_id": "{{client_num}}-{{client_id|lower}}.apps.googleusercontent.com",
+  "client_secret": "{{secret}}",
+  "quota_project_id": "{{quota}}",
+  "refresh_token": "{{refresh}}",
+  "type": "authorized_user",
+  "universe_domain": "googleapis.com"
+}
+''' }
+
+[[decoy]]
+id = "gcp-service-account"
+category = "cloud"
+group = "project"
+description = "GCP service account key inside a decoy repository"
+targets = [
+  '%USERPROFILE%\source\repos\{{project}}\deploy\{{gcp_project}}-sa.json',
+  '%USERPROFILE%\Projects\{{project}}\deploy\{{gcp_project}}-sa.json',
+]
+fresh_dirs = ['%USERPROFILE%\source\repos\{{project}}', '%USERPROFILE%\Projects\{{project}}']
+fields = { key_id = "hex:40", key = "private_key_pem", client_id = "digits:21" }
+plausibility = { age_days = [150, 700] }
+content = { kind = "text", template = '''{
+  "type": "service_account",
+  "project_id": "{{gcp_project}}",
+  "private_key_id": "{{key_id}}",
+  "private_key": "{{key|json}}",
+  "client_email": "deploy@{{gcp_project}}.iam.gserviceaccount.com",
+  "client_id": "{{client_id}}",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/deploy%40{{gcp_project}}.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
+''' }
+
+[[decoy]]
+id = "kube-config"
+category = "cloud"
+description = "Kubernetes kubeconfig with bearer token and client certificate"
+targets = [
+  '%USERPROFILE%\.kube\config',
+  '%USERPROFILE%\.kube\config.bak',
+  '%USERPROFILE%\.kube\config-{{cluster}}',
+]
+installed_if = ['%USERPROFILE%\.kube\config']
+fields = { cluster = "pick:k8s_clusters", ca = "b64:1100", cert = "b64:1050", key = "b64:1190", token = "jwt", domain = "pick:internal_domains" }
+plausibility = { age_days = [30, 400] }
+content = { kind = "text", template = '''apiVersion: v1
+kind: Config
+clusters:
+- cluster:
+    certificate-authority-data: {{ca}}
+    server: https://api.{{cluster}}.{{domain}}:6443
+  name: {{cluster}}
+contexts:
+- context:
+    cluster: {{cluster}}
+    namespace: default
+    user: {{cluster}}-admin
+  name: {{cluster}}
+current-context: {{cluster}}
+preferences: {}
+users:
+- name: {{cluster}}-admin
+  user:
+    client-certificate-data: {{cert}}
+    client-key-data: {{key}}
+    token: {{token}}
+''' }
+
+[[decoy]]
+id = "docker-config"
+category = "cloud"
+description = "Docker client config with registry auth (~/.docker/config.json)"
+targets = [
+  '%USERPROFILE%\.docker\config.json',
+  '%USERPROFILE%\.docker\config.json.bak',
+  '%USERPROFILE%\.docker-old\config.json',
+]
+installed_if = ['%USERPROFILE%\.docker\config.json']
+fields = { hub = "docker_auth", acr = "docker_auth", registry = "pick:registries" }
+plausibility = { age_days = [30, 400] }
+content = { kind = "text", template = '''{
+	"auths": {
+		"https://index.docker.io/v1/": {
+			"auth": "{{hub}}"
+		},
+		"{{registry}}.azurecr.io": {
+			"auth": "{{acr}}"
+		}
+	}
+}''' }
+
+[[decoy]]
+id = "npmrc"
+category = "cloud"
+description = "npm auth tokens (~/.npmrc)"
+targets = [
+  '%USERPROFILE%\.npmrc',
+  '%USERPROFILE%\.npmrc.bak',
+  '%USERPROFILE%\.npmrc.old',
+]
+installed_if = ['%USERPROFILE%\.npmrc']
+fields = { npm = "npm_token", gh = "github_pat", scope = "pick:npm_scopes" }
+plausibility = { age_days = [60, 500] }
+content = { kind = "text", template = '''//registry.npmjs.org/:_authToken={{npm}}
+@{{scope}}:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken={{gh}}
+''' }
+
+[[decoy]]
+id = "pypirc"
+category = "cloud"
+description = "PyPI upload credentials (~/.pypirc)"
+targets = [
+  '%USERPROFILE%\.pypirc',
+  '%USERPROFILE%\.pypirc.bak',
+]
+installed_if = ['%USERPROFILE%\.pypirc']
+fields = { token = "pypi_token" }
+plausibility = { age_days = [60, 600] }
+content = { kind = "text", template = '''[distutils]
+index-servers =
+    pypi
+
+[pypi]
+username = __token__
+password = {{token}}
+''' }
+
+[[decoy]]
+id = "git-credentials"
+category = "cloud"
+description = "Git credential store (~/.git-credentials)"
+targets = [
+  '%USERPROFILE%\.git-credentials',
+  '%USERPROFILE%\.git-credentials.bak',
+  '%USERPROFILE%\.git-credentials.old',
+]
+installed_if = ['%USERPROFILE%\.git-credentials']
+fields = { user = "username", gh = "github_pat", fine = "github_fine_grained", domain = "pick:internal_domains" }
+plausibility = { age_days = [60, 600] }
+content = { kind = "text", template = '''https://{{user}}:{{gh}}@github.com
+https://{{user}}:{{fine}}@git.{{domain}}
+''' }
+
+[[decoy]]
+id = "ssh-key-private"
+category = "cloud"
+group = "ssh"
+description = "Stale SSH private key in a secondary folder (~/.ssh/<old>/id_ed25519)"
+targets = [
+  '%USERPROFILE%\.ssh\{{sshdir}}\id_ed25519',
+  '%USERPROFILE%\.ssh\{{sshdir}}-keys\id_ed25519',
+]
+fresh_dirs = ['%USERPROFILE%\.ssh\{{sshdir}}', '%USERPROFILE%\.ssh\{{sshdir}}-keys']
+plausibility = { age_days = [200, 1200] }
+content = { kind = "text", template = '''{{key}}''' }
+
+[[decoy]]
+id = "ssh-key-public"
+category = "cloud"
+group = "ssh"
+description = "Matching SSH public key"
+targets = [
+  '%USERPROFILE%\.ssh\{{sshdir}}\id_ed25519.pub',
+  '%USERPROFILE%\.ssh\{{sshdir}}-keys\id_ed25519.pub',
+]
+fresh_dirs = ['%USERPROFILE%\.ssh\{{sshdir}}', '%USERPROFILE%\.ssh\{{sshdir}}-keys']
+plausibility = { age_days = [200, 1200] }
+content = { kind = "text", template = '''{{key.public}}
+''' }
+
+[[decoy]]
+id = "project-dotenv"
+category = "cloud"
+group = "project"
+description = ".env file inside a decoy repository"
+targets = [
+  '%USERPROFILE%\source\repos\{{project}}\.env',
+  '%USERPROFILE%\Projects\{{project}}\.env',
+]
+fresh_dirs = ['%USERPROFILE%\source\repos\{{project}}', '%USERPROFILE%\Projects\{{project}}']
+fields = { aws_id = "aws_access_key_id", aws_secret = "aws_secret_access_key", openai = "openai_api_key", anthropic = "anthropic_api_key", jwt_secret = "hex:64", sentry = "hex:32", sentry_org = "digits:7" }
+plausibility = { age_days = [150, 700] }
+content = { kind = "text", template = '''NODE_ENV=production
+PORT=8080
+DATABASE_URL=postgresql://{{pg_user}}:{{pg_password}}@{{pg_host}}.{{internal_domain}}:5432/{{pg_db}}
+STRIPE_SECRET_KEY={{stripe_key}}
+AWS_ACCESS_KEY_ID={{aws_id}}
+AWS_SECRET_ACCESS_KEY={{aws_secret}}
+AWS_REGION=us-east-1
+OPENAI_API_KEY={{openai}}
+ANTHROPIC_API_KEY={{anthropic}}
+SLACK_BOT_TOKEN={{slack_token}}
+JWT_SECRET={{jwt_secret}}
+SENTRY_DSN=https://{{sentry}}@o{{sentry_org}}.ingest.sentry.io/{{sentry_org}}
+''' }
+
+# ---------------------------------------------------------------------------
+# Browser stores (planted in a fresh decoy profile, only if the browser is
+# installed; Local State and real profiles are never touched)
+# ---------------------------------------------------------------------------
+
+[[decoy]]
+id = "chrome-login-data"
+category = "browser"
+group = "chrome"
+description = "Chrome decoy profile: Login Data"
+targets = [
+  '%LOCALAPPDATA%\Google\Chrome\User Data\{{profile}}\Login Data',
+  '%LOCALAPPDATA%\Google\Chrome\User Data\{{profile_alt}}\Login Data',
+]
+fresh_dirs = ['%LOCALAPPDATA%\Google\Chrome\User Data\{{profile}}', '%LOCALAPPDATA%\Google\Chrome\User Data\{{profile_alt}}']
+plausibility = { age_days = [20, 300] }
+content = { kind = "sqlite", shape = "chromium_login_data", rows = [
+  { origin = "https://github.com/login", username = "{{user}}@{{work_domain}}" },
+  { origin = "https://console.aws.amazon.com/", username = "{{user}}@{{work_domain}}" },
+  { origin = "https://portal.azure.com/", username = "{{user}}@{{work_domain}}" },
+  { origin = "https://dashboard.stripe.com/login", username = "{{user}}@{{work_domain}}" },
+  { origin = "https://app.slack.com/", username = "{{user}}@{{work_domain}}" },
+] }
+
+[[decoy]]
+id = "chrome-cookies"
+category = "browser"
+group = "chrome"
+description = "Chrome decoy profile: Network\\Cookies"
+targets = [
+  '%LOCALAPPDATA%\Google\Chrome\User Data\{{profile}}\Network\Cookies',
+  '%LOCALAPPDATA%\Google\Chrome\User Data\{{profile_alt}}\Network\Cookies',
+]
+fresh_dirs = ['%LOCALAPPDATA%\Google\Chrome\User Data\{{profile}}', '%LOCALAPPDATA%\Google\Chrome\User Data\{{profile_alt}}']
+plausibility = { age_days = [1, 20] }
+content = { kind = "sqlite", shape = "chromium_cookies", rows = [
+  { host = ".github.com", name = "user_session" },
+  { host = ".github.com", name = "_gh_sess" },
+  { host = ".slack.com", name = "d" },
+  { host = ".stripe.com", name = "__stripe_session" },
+  { host = ".claude.ai", name = "sessionKey" },
+  { host = ".chatgpt.com", name = "__Secure-next-auth.session-token" },
+] }
+
+[[decoy]]
+id = "chrome-preferences"
+category = "browser"
+group = "chrome"
+description = "Chrome decoy profile: Preferences"
+targets = [
+  '%LOCALAPPDATA%\Google\Chrome\User Data\{{profile}}\Preferences',
+  '%LOCALAPPDATA%\Google\Chrome\User Data\{{profile_alt}}\Preferences',
+]
+fresh_dirs = ['%LOCALAPPDATA%\Google\Chrome\User Data\{{profile}}', '%LOCALAPPDATA%\Google\Chrome\User Data\{{profile_alt}}']
+fields = { name = "pick:profile_names" }
+plausibility = { age_days = [1, 20] }
+content = { kind = "text", template = '''{"account_info":[{"email":"{{user}}@{{work_domain}}","full_name":"{{user}}"}],"profile":{"name":"{{name}}","avatar_index":26,"exit_type":"Normal"},"browser":{"has_seen_welcome_page":true}}''' }
+
+[[decoy]]
+id = "edge-login-data"
+category = "browser"
+group = "edge"
+description = "Edge decoy profile: Login Data"
+targets = [
+  '%LOCALAPPDATA%\Microsoft\Edge\User Data\{{profile}}\Login Data',
+  '%LOCALAPPDATA%\Microsoft\Edge\User Data\{{profile_alt}}\Login Data',
+]
+fresh_dirs = ['%LOCALAPPDATA%\Microsoft\Edge\User Data\{{profile}}', '%LOCALAPPDATA%\Microsoft\Edge\User Data\{{profile_alt}}']
+plausibility = { age_days = [20, 300] }
+content = { kind = "sqlite", shape = "chromium_login_data", rows = [
+  { origin = "https://login.microsoftonline.com/", username = "{{user}}@{{work_domain}}" },
+  { origin = "https://github.com/login", username = "{{user}}" },
+  { origin = "https://app.datadoghq.com/", username = "{{user}}@{{work_domain}}" },
+] }
+
+[[decoy]]
+id = "edge-cookies"
+category = "browser"
+group = "edge"
+description = "Edge decoy profile: Network\\Cookies"
+targets = [
+  '%LOCALAPPDATA%\Microsoft\Edge\User Data\{{profile}}\Network\Cookies',
+  '%LOCALAPPDATA%\Microsoft\Edge\User Data\{{profile_alt}}\Network\Cookies',
+]
+fresh_dirs = ['%LOCALAPPDATA%\Microsoft\Edge\User Data\{{profile}}', '%LOCALAPPDATA%\Microsoft\Edge\User Data\{{profile_alt}}']
+plausibility = { age_days = [1, 20] }
+content = { kind = "sqlite", shape = "chromium_cookies", rows = [
+  { host = ".login.microsoftonline.com", name = "ESTSAUTHPERSISTENT" },
+  { host = ".github.com", name = "user_session" },
+  { host = ".atlassian.net", name = "tenant.session.token" },
+] }
+
+[[decoy]]
+id = "brave-login-data"
+category = "browser"
+group = "brave"
+description = "Brave decoy profile: Login Data"
+targets = [
+  '%LOCALAPPDATA%\BraveSoftware\Brave-Browser\User Data\{{profile}}\Login Data',
+  '%LOCALAPPDATA%\BraveSoftware\Brave-Browser\User Data\{{profile_alt}}\Login Data',
+]
+fresh_dirs = ['%LOCALAPPDATA%\BraveSoftware\Brave-Browser\User Data\{{profile}}', '%LOCALAPPDATA%\BraveSoftware\Brave-Browser\User Data\{{profile_alt}}']
+plausibility = { age_days = [20, 300] }
+content = { kind = "sqlite", shape = "chromium_login_data", rows = [
+  { origin = "https://www.binance.com/en/login", username = "{{user}}@{{work_domain}}" },
+  { origin = "https://github.com/login", username = "{{user}}" },
+  { origin = "https://www.coinbase.com/signin", username = "{{user}}@{{work_domain}}" },
+] }
+
+[[decoy]]
+id = "brave-cookies"
+category = "browser"
+group = "brave"
+description = "Brave decoy profile: Network\\Cookies"
+targets = [
+  '%LOCALAPPDATA%\BraveSoftware\Brave-Browser\User Data\{{profile}}\Network\Cookies',
+  '%LOCALAPPDATA%\BraveSoftware\Brave-Browser\User Data\{{profile_alt}}\Network\Cookies',
+]
+fresh_dirs = ['%LOCALAPPDATA%\BraveSoftware\Brave-Browser\User Data\{{profile}}', '%LOCALAPPDATA%\BraveSoftware\Brave-Browser\User Data\{{profile_alt}}']
+plausibility = { age_days = [1, 20] }
+content = { kind = "sqlite", shape = "chromium_cookies", rows = [
+  { host = ".binance.com", name = "p20t" },
+  { host = ".coinbase.com", name = "login-session" },
+] }
+
+# ---------------------------------------------------------------------------
+# Crypto wallets (only when the real wallet is not installed)
+# ---------------------------------------------------------------------------
+
+[[decoy]]
+id = "exodus-seed"
+category = "wallet"
+group = "exodus"
+description = "Exodus wallet seed file (exodus.wallet\\seed.seco)"
+targets = ['%APPDATA%\Exodus\exodus.wallet\seed.seco']
+plausibility = { age_days = [100, 900] }
+content = { kind = "binary", magic = "5345434f", size = [380, 620] }
+
+[[decoy]]
+id = "exodus-passphrase"
+category = "wallet"
+group = "exodus"
+description = "Exodus wallet passphrase.json"
+targets = ['%APPDATA%\Exodus\exodus.wallet\passphrase.json']
+fields = { passphrase = "hex:64" }
+plausibility = { age_days = [100, 900] }
+content = { kind = "text", template = '''{"passphrase":"{{passphrase}}"}''' }
+
+[[decoy]]
+id = "exodus-storage"
+category = "wallet"
+group = "exodus"
+description = "Exodus wallet storage.seco"
+targets = ['%APPDATA%\Exodus\exodus.wallet\storage.seco']
+plausibility = { age_days = [1, 60] }
+content = { kind = "binary", magic = "5345434f", size = [9000, 24000] }
+
+[[decoy]]
+id = "electrum-wallet"
+category = "wallet"
+description = "Electrum default wallet (encrypted)"
+targets = ['%APPDATA%\Electrum\wallets\default_wallet']
+skip_if_any = ['%APPDATA%\Electrum']
+fields = { blob = "b64:2400" }
+plausibility = { age_days = [100, 1000] }
+content = { kind = "text", template = '''{{blob}}''' }
+
+[[decoy]]
+id = "atomic-leveldb"
+category = "wallet"
+description = "Atomic Wallet Local Storage LevelDB"
+targets = ['%APPDATA%\atomic\Local Storage\leveldb']
+skip_if_any = ['%APPDATA%\atomic']
+fields = { vault = "b64:900", salt = "hex:32", address = "eth_address" }
+plausibility = { age_days = [30, 400] }
+content = { kind = "leveldb", entries = [
+  { key = "_file://\u0000\u0001general_mnemonic", value = "\u0001{\"data\":\"{{vault}}\",\"salt\":\"{{salt}}\"}" },
+  { key = "_file://\u0000\u0001addresses", value = "\u0001[\"{{address}}\"]" },
+] }
+
+[[decoy]]
+id = "metamask-vault"
+category = "wallet"
+group = "chrome"
+description = "MetaMask extension vault LevelDB in the Chrome decoy profile"
+targets = [
+  '%LOCALAPPDATA%\Google\Chrome\User Data\{{profile}}\Local Extension Settings\nkbihfbeogaeaoehlefnkodbefgpgknn',
+  '%LOCALAPPDATA%\Google\Chrome\User Data\{{profile_alt}}\Local Extension Settings\nkbihfbeogaeaoehlefnkodbefgpgknn',
+]
+fresh_dirs = ['%LOCALAPPDATA%\Google\Chrome\User Data\{{profile}}', '%LOCALAPPDATA%\Google\Chrome\User Data\{{profile_alt}}']
+skip_if_any = ['%LOCALAPPDATA%\Google\Chrome\User Data\Default\Local Extension Settings\nkbihfbeogaeaoehlefnkodbefgpgknn']
+fields = { data = "b64:1200", iv = "b64:16", salt = "b64:32", address = "eth_address" }
+plausibility = { age_days = [30, 400] }
+content = { kind = "leveldb", entries = [
+  { key = "KeyringController", value = "{\"vault\":\"{\\\"data\\\":\\\"{{data}}\\\",\\\"iv\\\":\\\"{{iv}}\\\",\\\"keyMetadata\\\":{\\\"algorithm\\\":\\\"PBKDF2\\\",\\\"params\\\":{\\\"iterations\\\":600000}},\\\"salt\\\":\\\"{{salt}}\\\"}\"}" },
+  { key = "PreferencesController", value = "{\"selectedAddress\":\"{{address}}\",\"identities\":{\"{{address}}\":{\"address\":\"{{address}}\",\"name\":\"Account 1\"}}}" },
+] }
+
+# ---------------------------------------------------------------------------
+# Messaging sessions (decoy locations only)
+# ---------------------------------------------------------------------------
+
+[[decoy]]
+id = "telegram-key-datas"
+category = "messaging"
+group = "telegram"
+description = "Telegram Desktop tdata key file"
+targets = [
+  '%APPDATA%\Telegram Desktop\tdata\key_datas',
+  '%APPDATA%\Telegram Desktop Portable\tdata\key_datas',
+]
+installed_if = ['%APPDATA%\Telegram Desktop\tdata']
+fresh_dirs = ['%APPDATA%\Telegram Desktop', '%APPDATA%\Telegram Desktop Portable']
+plausibility = { age_days = [30, 600] }
+content = { kind = "binary", magic = "54444624", size = [300, 420] }
+
+[[decoy]]
+id = "telegram-account-map"
+category = "messaging"
+group = "telegram"
+description = "Telegram Desktop tdata account map"
+targets = [
+  '%APPDATA%\Telegram Desktop\tdata\D877F783D5D3EF8C\maps',
+  '%APPDATA%\Telegram Desktop Portable\tdata\D877F783D5D3EF8C\maps',
+]
+installed_if = ['%APPDATA%\Telegram Desktop\tdata']
+fresh_dirs = ['%APPDATA%\Telegram Desktop', '%APPDATA%\Telegram Desktop Portable']
+plausibility = { age_days = [1, 60] }
+content = { kind = "binary", magic = "54444624", size = [500, 900] }
+
+[[decoy]]
+id = "telegram-account-key"
+category = "messaging"
+group = "telegram"
+description = "Telegram Desktop tdata account key"
+targets = [
+  '%APPDATA%\Telegram Desktop\tdata\D877F783D5D3EF8Cs',
+  '%APPDATA%\Telegram Desktop Portable\tdata\D877F783D5D3EF8Cs',
+]
+installed_if = ['%APPDATA%\Telegram Desktop\tdata']
+fresh_dirs = ['%APPDATA%\Telegram Desktop', '%APPDATA%\Telegram Desktop Portable']
+plausibility = { age_days = [1, 60] }
+content = { kind = "binary", magic = "54444624", size = [600, 1100] }
+
+[[decoy]]
+id = "telegram-settings"
+category = "messaging"
+group = "telegram"
+description = "Telegram Desktop tdata settings"
+targets = [
+  '%APPDATA%\Telegram Desktop\tdata\settingss',
+  '%APPDATA%\Telegram Desktop Portable\tdata\settingss',
+]
+installed_if = ['%APPDATA%\Telegram Desktop\tdata']
+fresh_dirs = ['%APPDATA%\Telegram Desktop', '%APPDATA%\Telegram Desktop Portable']
+plausibility = { age_days = [1, 60] }
+content = { kind = "binary", magic = "54444624", size = [1500, 4000] }
+
+[[decoy]]
+id = "discord-leveldb"
+category = "messaging"
+description = "Discord Local Storage LevelDB holding a session token"
+targets = [
+  '%APPDATA%\discord\Local Storage\leveldb',
+  '%APPDATA%\discordptb\Local Storage\leveldb',
+  '%APPDATA%\discordcanary\Local Storage\leveldb',
+]
+installed_if = ['%APPDATA%\discord']
+fresh_dirs = ['%APPDATA%\discord', '%APPDATA%\discordptb', '%APPDATA%\discordcanary']
+fields = { token = "discord_token", user = "username" }
+plausibility = { age_days = [1, 30] }
+content = { kind = "leveldb", entries = [
+  { key = "_https://discord.com\u0000\u0001token", value = "\u0001\"{{token}}\"" },
+  { key = "_https://discord.com\u0000\u0001user_id_cache", value = "\u0001\"{{user}}\"" },
+] }
+
+# ---------------------------------------------------------------------------
+# Password manager exports
+# ---------------------------------------------------------------------------
+
+[[decoy]]
+id = "password-export-csv"
+category = "password_manager"
+description = "Forgotten password manager CSV export"
+targets = [
+  '%USERPROFILE%\Documents\Backups\passwords-export-2024.csv',
+  '%USERPROFILE%\Downloads\passwords-export-2024.csv',
+  '%USERPROFILE%\Backups\passwords-export-2024.csv',
+]
+fields = { user = "username", domain = "pick:work_domains", personal = "pick:domains", p1 = "password:18", p2 = "password:20", p3 = "password:16", p4 = "password:22", p5 = "password:18", p6 = "password:24", p7 = "password:14", totp = "base58:32" }
+plausibility = { age_days = [200, 700] }
+content = { kind = "text", template = '''folder,favorite,type,name,notes,fields,reprompt,login_uri,login_username,login_password,login_totp
+Work,1,login,GitHub,,,0,https://github.com/login,{{user}}@{{domain}},{{p1}},otpauth://totp/GitHub:{{user}}?secret={{totp|upper}}
+Work,,login,AWS Console,,,0,https://signin.aws.amazon.com/console,{{user}}@{{domain}},{{p2}},
+Work,,login,Azure Portal,,,0,https://portal.azure.com/,{{user}}@{{domain}},{{p3}},
+Work,,login,Stripe Dashboard,,,0,https://dashboard.stripe.com/login,{{user}}@{{domain}},{{p4}},
+Work,,login,Slack,,,0,https://app.slack.com/,{{user}}@{{domain}},{{p5}},
+Personal,1,login,Google,,,0,https://accounts.google.com/,{{user}}@{{personal}},{{p6}},
+Personal,,login,Coinbase,,,0,https://www.coinbase.com/signin,{{user}}@{{personal}},{{p7}},
+''' }

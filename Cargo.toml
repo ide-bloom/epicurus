@@ -1,0 +1,67 @@
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/ide-bloom/epicurus"
+authors = ["Epicurus contributors"]
+
+[workspace.dependencies]
+epicurus-core = { path = "crates/epicurus-core", version = "0.1.0" }
+epicurus-sensor = { path = "crates/epicurus-sensor", version = "0.1.0" }
+epicurus-service = { path = "crates/epicurus-service", version = "0.1.0" }
+epicurus-ui = { path = "crates/epicurus-ui", version = "0.1.0" }
+
+anyhow = "1.0.105"
+base64 = "0.23.1"
+clap = { version = "4.6.9", features = ["derive"] }
+eframe = { version = "0.37.0", default-features = false, features = ["glow", "default_fonts", "clipboard"] }
+embed-resource = "3.0.12"
+hex = "0.4.3"
+hmac = "0.13.0"
+rand = "0.10.4"
+reqwest = { version = "0.13.5", default-features = false, features = ["rustls-no-provider", "json"] }
+rustls = { version = "0.23.46", default-features = false, features = ["ring", "std", "tls12", "logging"] }
+rusqlite = { version = "0.43.0", features = ["bundled", "serialize"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+sha2 = "0.11.1"
+tempfile = "3.27.0"
+thiserror = "2.0.21"
+time = { version = "0.3.55", features = ["serde", "formatting", "parsing", "macros"] }
+tokio = { version = "1.54.1", features = ["rt-multi-thread", "sync", "time", "net", "io-util", "macros"] }
+toml = "1.2.2"
+tracing = "0.1.44"
+tracing-appender = "0.2.5"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+tray-icon = "0.26.1"
+windows = "0.62.2"
+windows-service = "0.8.1"
+
+[workspace.lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+missing_docs = "warn"
+
+[workspace.lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+undocumented_unsafe_blocks = "deny"
+dbg_macro = "deny"
+todo = "deny"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "symbols"
+
+[profile.dev]
+# Keep debug builds small: line tables are enough for backtraces.
+debug = "line-tables-only"
+incremental = false
+
+[profile.dev.package."*"]
+debug = false
