@@ -46,15 +46,24 @@ pub fn child(pipe: &str, linger_secs: u64) -> anyhow::Result<()> {
         }
     }
     chosen.truncate(MAX_FILES);
-    // Sweep back to back, as real stealers do: every open happens within a
-    // few milliseconds, before containment can land, so the incident shows
-    // the full multi-category sweep.
-    for p in &chosen {
-        // Read and discard. The content is a decoy; nothing leaves memory.
-        if let Ok(bytes) = std::fs::read(p) {
-            std::hint::black_box(bytes.len());
+    // Sweep with parallel workers, as many stealers do: a barrier releases
+    // every worker at once, so all opens are issued within microseconds.
+    // Epicurus contains a sequential sweep after the first file or two (the
+    // first open breaks an oplock and flushes ETW); a parallel sweep shows
+    // the full multi-category picture in the incident.
+    let barrier = std::sync::Barrier::new(chosen.len());
+    std::thread::scope(|s| {
+        for p in &chosen {
+            let barrier = &barrier;
+            s.spawn(move || {
+                barrier.wait();
+                // Read and discard. The content is a decoy; nothing leaves memory.
+                if let Ok(bytes) = std::fs::read(p) {
+                    std::hint::black_box(bytes.len());
+                }
+            });
         }
-    }
+    });
     std::thread::sleep(Duration::from_secs(linger_secs.min(600)));
     Ok(())
 }

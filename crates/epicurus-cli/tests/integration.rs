@@ -155,6 +155,17 @@ fn plant(c: &mut Client) {
     std::thread::sleep(Duration::from_secs(2));
 }
 
+/// Kills the simulator when a test fails, so a suspended simulator never
+/// outlives the test (it would lock the test binary).
+struct KillOnDrop(Child);
+
+impl Drop for KillOnDrop {
+    fn drop(&mut self) {
+        let _ = self.0.kill();
+        let _ = self.0.wait();
+    }
+}
+
 fn spawn_simulator(pipe: &str) -> Child {
     Command::new(EXE)
         .args([
@@ -230,6 +241,19 @@ fn kill_unplant_and_verify(engine: Engine, mut c: Client, id: &str, sim: &mut Ch
     );
 }
 
+/// The incident once escalation from batched events has settled: three
+/// categories seen, or five seconds passed.
+fn settled(c: &mut Client, id: &str) -> epicurus_core::incident::Incident {
+    let deadline = Instant::now() + Duration::from_secs(5);
+    loop {
+        let i = incident(c, id);
+        if i.distinct_categories().len() >= 3 || Instant::now() >= deadline {
+            return i;
+        }
+        std::thread::sleep(Duration::from_millis(200));
+    }
+}
+
 fn incident(c: &mut Client, id: &str) -> epicurus_core::incident::Incident {
     match c.call(Request::GetIncident { id: id.to_string() }).unwrap() {
         Response::Incident { incident } => *incident,
@@ -244,17 +268,22 @@ fn etw_simulator_is_detected_attributed_suspended_and_cleaned_up() {
     engine.wait_for_mode(&mut c, "etw");
     plant(&mut c);
 
-    let mut sim = spawn_simulator(&engine.pipe);
-    let pid = sim.id();
+    let mut sim = KillOnDrop(spawn_simulator(&engine.pipe));
+    let pid = sim.0.id();
     let summary = wait_for_contained_incident(&mut c, pid);
     assert_eq!(summary.pid, pid, "attributed to the simulator's PID");
     assert!(summary.simulated, "tagged as a simulation");
-    assert_eq!(summary.severity, epicurus_core::scoring::Severity::Critical);
     assert!(
         epicurus_sensor::containment::is_suspended(pid),
         "simulator suspended"
     );
-    let full = incident(&mut c, &summary.id);
+    let full = settled(&mut c, &summary.id);
+    assert_eq!(
+        full.severity,
+        epicurus_core::scoring::Severity::Critical,
+        "{:?}",
+        full.reasons
+    );
     assert!(full.touches.iter().all(|t| t.source == SensorSource::Etw));
     assert!(
         full.distinct_categories().len() >= 3,
@@ -282,7 +311,7 @@ fn etw_simulator_is_detected_attributed_suspended_and_cleaned_up() {
         other => panic!("{other:?}"),
     }
 
-    kill_unplant_and_verify(engine, c, &summary.id, &mut sim);
+    kill_unplant_and_verify(engine, c, &summary.id, &mut sim.0);
 }
 
 #[test]
@@ -294,8 +323,8 @@ fn audit_fallback_attributes_the_simulator() {
     engine.wait_for_mode(&mut c, "audit");
     plant(&mut c);
 
-    let mut sim = spawn_simulator(&engine.pipe);
-    let pid = sim.id();
+    let mut sim = KillOnDrop(spawn_simulator(&engine.pipe));
+    let pid = sim.0.id();
     let summary = wait_for_contained_incident(&mut c, pid);
     assert_eq!(summary.pid, pid);
     let full = incident(&mut c, &summary.id);
@@ -310,7 +339,7 @@ fn audit_fallback_attributes_the_simulator() {
         "ReadData access recorded"
     );
 
-    kill_unplant_and_verify(engine, c, &summary.id, &mut sim);
+    kill_unplant_and_verify(engine, c, &summary.id, &mut sim.0);
     let _ = epicurus_sensor::privileges::enable("SeSecurityPrivilege");
     epicurus_sensor::audit::set_file_system_policy(previous).unwrap();
 }
