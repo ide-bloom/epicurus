@@ -46,12 +46,14 @@ pub fn child(pipe: &str, linger_secs: u64) -> anyhow::Result<()> {
         }
     }
     chosen.truncate(MAX_FILES);
+    // Sweep back to back, as real stealers do: every open happens within a
+    // few milliseconds, before containment can land, so the incident shows
+    // the full multi-category sweep.
     for p in &chosen {
         // Read and discard. The content is a decoy; nothing leaves memory.
         if let Ok(bytes) = std::fs::read(p) {
             std::hint::black_box(bytes.len());
         }
-        std::thread::sleep(Duration::from_millis(250));
     }
     std::thread::sleep(Duration::from_secs(linger_secs.min(600)));
     Ok(())

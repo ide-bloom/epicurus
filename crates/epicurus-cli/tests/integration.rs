@@ -189,6 +189,7 @@ fn wait_for_contained_incident(c: &mut Client, pid: u32) -> IncidentSummary {
 }
 
 fn kill_unplant_and_verify(engine: Engine, mut c: Client, id: &str, sim: &mut Child) {
+    let pid = sim.id();
     match c
         .call(Request::IncidentAction {
             id: id.to_string(),
@@ -200,6 +201,17 @@ fn kill_unplant_and_verify(engine: Engine, mut c: Client, id: &str, sim: &mut Ch
         other => panic!("{other:?}"),
     }
     let _ = sim.wait();
+    // Late events for the killed process must join its incident, not open
+    // a new one (ETW delivers in batches).
+    std::thread::sleep(Duration::from_millis(1500));
+    match c.call(Request::ListIncidents { limit: 50 }).unwrap() {
+        Response::Incidents { items } => assert_eq!(
+            items.iter().filter(|s| s.pid == pid).count(),
+            1,
+            "exactly one incident for the simulator"
+        ),
+        other => panic!("{other:?}"),
+    }
     match c.call(Request::Unplant).unwrap() {
         Response::Unplant(r) => {
             assert!(r.failed.is_empty() && r.kept_modified.is_empty(), "{r:?}")
@@ -244,6 +256,11 @@ fn etw_simulator_is_detected_attributed_suspended_and_cleaned_up() {
     );
     let full = incident(&mut c, &summary.id);
     assert!(full.touches.iter().all(|t| t.source == SensorSource::Etw));
+    assert!(
+        full.distinct_categories().len() >= 3,
+        "the whole multi-category sweep was captured: {:?}",
+        full.touches
+    );
 
     // Block network: a firewall rule for the image is created, then removed.
     match c

@@ -194,7 +194,10 @@ fn suspend_one(k: ProcKey) -> Result<()> {
     // SAFETY: valid handle with PROCESS_SUSPEND_RESUME.
     let st = unsafe { nt::NtSuspendProcess(h.raw()) };
     if st < 0 {
-        Err(SensorError::win32("NtSuspendProcess", st as u32))
+        Err(SensorError::NtStatus {
+            context: "NtSuspendProcess".into(),
+            status: st as u32,
+        })
     } else {
         Ok(())
     }
@@ -211,7 +214,10 @@ pub fn resume(keys: &[ProcKey]) -> TreeResult {
             // SAFETY: valid handle with PROCESS_SUSPEND_RESUME.
             let st = unsafe { nt::NtResumeProcess(h.raw()) };
             if st < 0 {
-                Err(SensorError::win32("NtResumeProcess", st as u32))
+                Err(SensorError::NtStatus {
+                    context: "NtResumeProcess".into(),
+                    status: st as u32,
+                })
             } else {
                 Ok(())
             }

@@ -16,6 +16,14 @@ pub enum SensorError {
         /// System message.
         message: String,
     },
+    /// An NT native call failed with an NTSTATUS.
+    #[error("{context}: NTSTATUS 0x{status:08X}{}", nt_status_name(*status))]
+    NtStatus {
+        /// What was being attempted.
+        context: String,
+        /// The NTSTATUS value.
+        status: u32,
+    },
     /// The operation is refused by policy (e.g. protected process).
     #[error("refused: {0}")]
     Refused(String),
@@ -50,5 +58,33 @@ impl SensorError {
             code,
             message: e.message(),
         }
+    }
+}
+
+/// Short names for NTSTATUS values containment commonly sees.
+fn nt_status_name(status: u32) -> &'static str {
+    match status {
+        0xC000_0022 => " (STATUS_ACCESS_DENIED)",
+        0xC000_010A => " (STATUS_PROCESS_IS_TERMINATING)",
+        0xC000_0008 => " (STATUS_INVALID_HANDLE)",
+        0xC000_0712 => " (STATUS_PROCESS_IS_PROTECTED)",
+        _ => "",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::SensorError;
+
+    #[test]
+    fn ntstatus_is_rendered_in_hex_with_a_name() {
+        let e = SensorError::NtStatus {
+            context: "NtSuspendProcess".into(),
+            status: 0xC000_010A,
+        };
+        assert_eq!(
+            e.to_string(),
+            "NtSuspendProcess: NTSTATUS 0xC000010A (STATUS_PROCESS_IS_TERMINATING)"
+        );
     }
 }

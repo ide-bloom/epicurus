@@ -642,13 +642,16 @@ impl Engine {
         }
 
         let id = proc_id(pid, profile.start_time);
-        let existing = self
-            .live
-            .get(&id)
-            .cloned()
-            .filter(|iid| self.open.contains_key(iid));
+        // One process, one incident: a touch that arrives after the user
+        // resolved the incident (ETW delivers in batches) is appended to it
+        // rather than opening a new incident for a process being killed.
+        let existing = self.live.get(&id).cloned().and_then(|iid| {
+            self.open
+                .remove(&iid)
+                .or_else(|| self.store.incident(&iid).ok().flatten())
+        });
         let created = existing.is_none();
-        let mut inc = match existing.and_then(|iid| self.open.remove(&iid)) {
+        let mut inc = match existing {
             Some(i) => i,
             None => {
                 let mut i = Incident::new(profile.clone(), now, self.host.clone());
@@ -711,7 +714,8 @@ impl Engine {
         if let Err(e) = self.store.save_incident(&inc) {
             tracing::error!(error = %e, "saving incident failed");
         }
-        if created || escalated {
+        let resolved = inc.status == IncidentStatus::Resolved;
+        if (created || escalated) && !resolved {
             self.notify(&inc, escalated);
         } else {
             let _ = self.events_tx.send(Event::Incident {
@@ -721,7 +725,9 @@ impl Engine {
             });
         }
         self.live.insert(id, inc.id.clone());
-        self.open.insert(inc.id.clone(), inc);
+        if !resolved {
+            self.open.insert(inc.id.clone(), inc);
+        }
     }
 
     fn rescore(&self, inc: &mut Incident, p: &ProcessProfile) {
@@ -784,6 +790,16 @@ impl Engine {
             return;
         }
         let now = OffsetDateTime::now_utc();
+        if p.exited {
+            inc.record_action(
+                now,
+                ActionKind::Suspend,
+                Actor::Policy,
+                false,
+                "process had already exited; nothing to suspend",
+            );
+            return;
+        }
         if p.protected {
             inc.record_action(
                 now,

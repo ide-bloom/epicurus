@@ -118,7 +118,7 @@ epicurus ui          # dashboard
 epicurus doctor      # if anything looks off
 ```
 
-`simulate` launches a child process (the same executable with a hidden flag). The child asks the service for Epicurus's own manifest, reads up to six decoys across categories, then lingers. It never touches real files and transmits nothing. The incident is tagged as a simulation, and the child is killed afterwards unless you pass `--keep`.
+`simulate` launches a child process (the same executable with a hidden flag). The child asks the service for Epicurus's own manifest, reads up to six decoys across categories back to back (a real stealer's sweep takes milliseconds), then lingers like a stealer packaging its loot. It never touches real files and transmits nothing. The incident is tagged as a simulation, and the child is killed afterwards unless you pass `--keep`.
 
 ## CLI reference
 
