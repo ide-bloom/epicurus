@@ -229,17 +229,6 @@ Epicurus raises the cost of credential theft and turns it into a loud, attributa
 - More catalog entries as stealer families evolve (contributions welcome)
 - Integration with Hush and Chaperone for coordinated secret rotation
 
-## Sister projects
-
-Epicurus is one of three projects in the **Palisade** toolkit:
-
-- **[Hush](https://github.com/ide-bloom/hush)**
-- **[Chaperone](https://github.com/ide-bloom/chaperone)**
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md). Please read the [Code of Conduct](CODE_OF_CONDUCT.md).
-
 ## Security
 
 Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md). Do not open public issues for security bugs.
