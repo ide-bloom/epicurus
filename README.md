@@ -12,7 +12,7 @@
 
 Epicurus plants realistic decoy credentials where infostealers look: AI coding-agent tokens, MCP server configs, cloud keys, browser stores, wallets, messaging sessions. Legitimate software has no reason to open them. When something does, Epicurus identifies the process with kernel ETW, suspends its whole process tree, alerts you, and writes a forensic report.
 
-Epicurus is part of the **Palisade** toolkit for developer security in the AI-agent era, with its sister projects [Hush](https://github.com/ide-bloom/hush) and [Chaperone](https://github.com/ide-bloom/chaperone).
+Epicurus is part of the **Palisade** toolkit for developer security in the AI-agent era, with its sister projects [Hush](https://github.com/ide-bloom/hush) and [Rousseau](https://github.com/ide-bloom/rousseau).
 
 ## Contents
 
@@ -227,7 +227,7 @@ Epicurus raises the cost of credential theft and turns it into a loud, attributa
 - Per-user protection for multi-user machines
 - ETW-based read volume telemetry (opt-in) for richer scoring
 - More catalog entries as stealer families evolve (contributions welcome)
-- Integration with Hush and Chaperone for coordinated secret rotation
+- Integration with Hush and Rousseau for coordinated secret rotation
 
 ## Security
 
